@@ -1,6 +1,6 @@
 # AirSkip
 
-<img src="assets/app-icon.png" alt="AirSkip app icon" width="96">
+<img src="assets/case-demo.gif" alt="AirPods case opens to start skipping with a forward icon, then closes to stop skipping." width="800">
 
 Use your AirPods case as a YouTube fast-forward remote on macOS. Open the
 lid to repeat the right-arrow key; close it to stop. Set the repeat delay from
