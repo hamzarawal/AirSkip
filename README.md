@@ -73,7 +73,10 @@ See [troubleshooting](docs/troubleshooting.md) for manual recovery.
 
 ## Development
 
+Run the local checks before pushing changes:
+
 ```sh
+bash -n scripts/build.sh scripts/sign-app.sh
 swift test
 bash scripts/build.sh
 ```

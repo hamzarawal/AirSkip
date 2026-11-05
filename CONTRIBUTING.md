@@ -3,13 +3,15 @@
 Use Swift 5.9 or later on macOS. Open `Package.swift` in Xcode or use the CLI:
 
 ```sh
+bash -n scripts/build.sh scripts/sign-app.sh
 swift test
 bash scripts/build.sh
 open dist/AirSkip.app
 ```
 
 The build produces an optimized app with bundled icons and all animation frames.
-GitHub Actions runs the regression suite and app packaging on macOS.
+Run the syntax checks, regression suite, and app build locally before pushing
+changes.
 
 Swift files live directly in `src/`; regression checks live in `tests/`. Add
 regression coverage for changes to decoding, device selection,
