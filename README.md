@@ -81,7 +81,3 @@ bash scripts/build.sh
 Open `Package.swift` in Xcode, or edit the Swift sources directly. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for validation and
 [architecture](docs/architecture.md) for the source layout and Bluetooth format.
-
-## License
-
-[MIT](LICENSE). AirSkip is an independent project and is not affiliated with Apple.
