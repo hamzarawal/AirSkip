@@ -48,16 +48,32 @@ or rendering tools are needed to build the app.
 
 ## Bluetooth format
 
-Apple manufacturer data is parsed as type/length/value messages. Only `07 11`
-case packets with the observed `29 20` model header supply lid readings. The
-16-byte payload can arrive decoded by macOS or be decrypted with the selected
-pair's 16-byte `MagicAccEncKey` using AES-128 ECB. Reserved fields and battery
-ranges must match the supported layout. The `07 19` earbud packet is not used
-for lid state because it can be stale outside the case.
+Apple manufacturer data is parsed as type/length/value messages. Case payload
+layouts are registered in `src/CasePacketLayout.swift`. The current decoder
+handles `07 11` messages with a 16-byte status payload, either already decoded
+by macOS or decrypted with the selected pair's `MagicAccEncKey` using AES-128 ECB.
+It validates reserved fields and battery ranges without requiring the Pro 3
+model header. The `07 19` earbud format is not used for lid state because it can
+be stale outside the case.
 
-The format is reverse-engineered and unauthenticated. Structural checks do not
-prove device ownership; physical lid confirmation and peripheral pinning are
-still required. Unknown layouts are rejected.
+Only AirPods Pro 3 firmware 9A348 has been tested. Other cases may share this
+layout or need a new decoder. These broadcasts are unauthenticated; field checks
+do not prove device ownership. Physical lid confirmation and peripheral pinning
+remain required. Payloads that fail the registered layout checks are rejected.
+
+### Adding another case layout
+
+1. Add a payload decoder in `CasePacketLayout.swift` that returns the same
+   `CaseAdvertisement` fields. Validate the payload length and structural fields
+   before reading offsets.
+2. Register it in `CasePacketLayout.supported` with its message-length byte.
+   Entries are tried in order, so put more specific layouts before general ones.
+3. Add synthetic plaintext/encrypted fixtures and check real open/closed
+   transitions on that case. Update the tested-model note only after testing.
+
+Layouts share the existing Apple message envelope and AES fallback. A different
+encryption scheme also needs a matching decryption path in `CaseAdvertisement`.
+The controls, animation, and skip scheduler consume the same decoded state.
 
 Protocol references:
 

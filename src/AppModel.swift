@@ -20,7 +20,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
     @Published var pairedDevices: [PairedDevice] = []
     @Published private(set) var selectedAddress = ""
     @Published private(set) var deviceStatus = "Finding your AirPods…"
-    @Published var deviceName = "AirPods Pro 3"
+    @Published var deviceName = "AirPods"
     @Published var keyReady = false
     @Published var loadingKey = false
     @Published var scanning = false
@@ -59,7 +59,6 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
     private var decodedCasePackets = 0
     private var plaintextCasePackets = 0
     private var closestCaseRSSI: Int?
-    private var unsupportedHeaders: Set<UInt16> = []
     private var scanStartedAt: TimeInterval?
     private var setupStarted = false
     private var lastDeviceRefresh: TimeInterval = 0
@@ -82,7 +81,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
         let savedInterval = defaults.double(forKey: "repeatInterval")
         if savedInterval.isFinite, (0.15...2).contains(savedInterval) { interval = savedInterval }
         controller.interval = interval
-        deviceName = defaults.string(forKey: "caseName") ?? "AirPods Pro 3"
+        deviceName = defaults.string(forKey: "caseName") ?? "AirPods"
         accessibilityReady = ChromeKeySender.hasAccessibility
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in self?.tick() }
         if let timer { RunLoop.main.add(timer, forMode: .common) }
@@ -209,7 +208,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
             savedKeyAttempts.insert(device.id)
             retrieveKey(for: device, paired: false)
         } else if !enabled, signal == nil, decodedCasePackets == 0, casePackets > 0,
-                  unsupportedHeaders.isEmpty, let scanStartedAt,
+                  let scanStartedAt,
                   ProcessInfo.processInfo.systemUptime - scanStartedAt > 5 {
             if !pairedKeyAttempts.contains(device.id) {
                 pairedKeyAttempts.insert(device.id)
@@ -286,7 +285,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
         keyRevision += 1
         do {
             try CaseKeyStore.save(imported, address: selectedAddress)
-            acceptKey(imported, name: "AirPods Pro 3")
+            acceptKey(imported, name: deviceName)
             return true
         } catch {
             message = error.localizedDescription
@@ -429,7 +428,6 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
         decodedCasePackets = 0
         plaintextCasePackets = 0
         closestCaseRSSI = nil
-        unsupportedHeaders = []
         scanDiagnostics = "Starting Bluetooth…"
         scanStartedAt = ProcessInfo.processInfo.systemUptime
         if central == nil {
@@ -507,7 +505,6 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
                 let rssi = RSSI.intValue
                 if (-127..<0).contains(rssi) { closestCaseRSSI = max(closestCaseRSSI ?? rssi, rssi) }
             }
-            if case .unsupportedHeader(let header) = inspection { unsupportedHeaders.insert(header) }
             guard case .decoded(let decoded) = inspection else { continue }
             decodedCasePackets += 1
             if decoded.deliveredPlaintext { plaintextCasePackets += 1 }
@@ -532,10 +529,8 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
         }
         recoverKeyIfNeeded()
         if listeningRequested {
-            let headers = unsupportedHeaders.sorted().map { String(format: "%04X", $0) }.joined(separator: ", ")
             let summary = "\(bluetoothStatus)\nAdvertisements: \(advertisementCount) · case packets: \(casePackets) · decoded: \(decodedCasePackets)\nAlready decoded by macOS: \(plaintextCasePackets) · decrypted with key: \(decodedCasePackets - plaintextCasePackets)"
                 + (closestCaseRSSI.map { "\nStrongest case signal: \($0) dBm" } ?? "")
-                + (headers.isEmpty ? "" : "\nUnrecognized case model header: \(headers)")
             if scanDiagnostics != summary { scanDiagnostics = summary }
         }
         let trusted = ChromeKeySender.hasAccessibility
@@ -544,9 +539,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
         if signalFresh != fresh { signalFresh = fresh }
         if scanning, !loadingKey, signal == nil, let scanStartedAt, now - scanStartedAt > 15, message == nil {
             message = casePackets > 0
-                ? (unsupportedHeaders.isEmpty
-                   ? "Case packets are arriving but their layout is not recognized. Open Troubleshooting to retry AirPods setup."
-                   : "Case packets decrypt, but their model header is unsupported. See Troubleshooting for details.")
+                ? "Case packets are arriving but their layout is not recognized. Open Troubleshooting to retry AirPods setup."
                 : "No compatible case broadcast received yet. Keep the case nearby and open/close it. This Mac or firmware may not expose the required broadcast."
         }
         let target = enabled ? ChromeKeySender.target() : ChromeKeySender.Target(pid: nil, reason: "Disabled")

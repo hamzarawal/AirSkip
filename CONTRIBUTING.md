@@ -11,9 +11,12 @@ open dist/AirSkip.app
 The build produces an optimized app with bundled icons and all animation frames.
 GitHub Actions runs the regression suite and app packaging on macOS.
 
-Swift files live directly in `src/`; regression checks live in `tests/`. Add regression coverage for changes to decoding, device selection,
+Swift files live directly in `src/`; regression checks live in `tests/`. Add
+regression coverage for changes to decoding, device selection,
 verification, or timing. Use synthetic packet data and keys. Never commit real
 keys, device identifiers, Bluetooth captures, or signing credentials.
+
+For another case layout, follow [the decoder extension steps](docs/architecture.md#adding-another-case-layout).
 
 For changes to the app, check the affected paths on a Mac:
 

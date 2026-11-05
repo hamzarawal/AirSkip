@@ -13,8 +13,9 @@ Open **Troubleshoot** in AirSkip:
 3. If another case was detected, select the correct **Nearby case**, or use
    **Find case again**. Repeat **The lid matches** before enabling.
 4. Expand **Bluetooth diagnostics**. It shows packet counts, decoding counts,
-   signal strength, and unsupported model headers. No keys or raw packets are
-   displayed. An unsupported layout may require an app update.
+   and signal strength. No keys or raw packets are displayed. If case packets
+   arrive but decoding stays at zero, the case may need a different decoder.
+   Testing has only been done with AirPods Pro 3; other cases may need changes.
 
 If the animation already follows your lid, no key setup is needed. macOS can
 provide an already decoded payload.

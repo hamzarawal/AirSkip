@@ -63,16 +63,60 @@ final class CaseAdvertisementTests: XCTestCase {
         XCTAssertFalse(result.isOpen)
     }
 
-    func testPlaintextStillRejectsUnrecognizedModelAndInvalidFields() {
-        let payload = Data([0x29, 0x20, 1, 100, 0xff, 0xff, 0x5a, 0x86,
-                            0, 0, 1, 0, 1, 2, 3, 4])
-        for (index, value) in [(0, UInt8(0x27)), (8, 1), (10, 2), (11, 1), (3, 101), (4, 101)] {
-            var changed = payload
-            changed[index] = value
-            let raw = Data([0x4c, 0, 0x07, 0x11, 0x06]) + changed
-            XCTAssertNil(CaseAdvertisement.decode(manufacturerData: raw))
-            XCTAssertNil(CaseAdvertisement.decode(manufacturerData: raw, key: key))
+    func testDifferentModelHeadersDecodePlaintextAndEncryptedLidStates() throws {
+        // Synthetic headers exercise compatibility without claiming other models were tested.
+        for header: UInt16 in [0x2920, 0x1420, 0x0000, 0xffff] {
+            for isOpen in [false, true] {
+                var payload = closed
+                payload[0] = UInt8(header >> 8)
+                payload[1] = UInt8(header & 0xff)
+                payload[2] = isOpen ? 1 : 9
+                let plaintext = Data([0x4c, 0, 0x07, 0x11, 0x06]) + payload
+                let direct = try XCTUnwrap(CaseAdvertisement.decode(manufacturerData: plaintext))
+                XCTAssertEqual(direct.isOpen, isOpen)
+                XCTAssertTrue(direct.deliveredPlaintext)
+                XCTAssertEqual(CaseAdvertisement.decode(manufacturerData: plaintext, key: key), direct)
+                let decrypted = try XCTUnwrap(CaseAdvertisement.decode(manufacturerData: packet(payload), key: key))
+                XCTAssertEqual(decrypted.isOpen, isOpen)
+                XCTAssertEqual(decrypted.batteryPercent, direct.batteryPercent)
+                XCTAssertEqual(decrypted.earbudsInCase, direct.earbudsInCase)
+                XCTAssertFalse(decrypted.deliveredPlaintext)
+            }
         }
+    }
+
+    func testPlaintextRejectsInvalidFieldsAcrossModelHeaders() {
+        for model: UInt8 in [0x29, 0x14] {
+            let payload = Data([model, 0x20, 1, 100, 0xff, 0xff, 0x5a, 0x86,
+                                0, 0, 1, 0, 1, 2, 3, 4])
+            for (index, value) in [(8, UInt8(1)), (10, 2), (11, 1), (3, 101), (4, 101), (5, 101)] {
+                var changed = payload
+                changed[index] = value
+                let raw = Data([0x4c, 0, 0x07, 0x11, 0x06]) + changed
+                XCTAssertNil(CaseAdvertisement.decode(manufacturerData: raw))
+                XCTAssertNil(CaseAdvertisement.decode(manufacturerData: raw, key: key))
+            }
+        }
+    }
+
+    func testRegisteredLayoutCanUseDifferentMessageLengthAndFields() throws {
+        let additional = CasePacketLayout(messageLength: 0x05) { data in
+            let bytes = [UInt8](data)
+            guard bytes.count == 4, bytes[0] == 0xa5, bytes[1] <= 1,
+                  bytes[2] <= 100, bytes[3] <= 2 else { return nil }
+            return CaseAdvertisement(isOpen: bytes[1] == 1, openCounter: 0,
+                                     batteryPercent: Int(bytes[2]), earbudsInCase: Int(bytes[3]))
+        }
+        let layouts = CasePacketLayout.supported + [additional]
+        let payload = Data([0xa5, 1, 65, 2])
+        XCTAssertNil(CasePacketLayout.decode(payload, messageLength: 0x05))
+        let decoded = try XCTUnwrap(CasePacketLayout.decode(payload, messageLength: 0x05, layouts: layouts))
+        XCTAssertTrue(decoded.isOpen)
+        XCTAssertEqual(decoded.batteryPercent, 65)
+        XCTAssertEqual(decoded.earbudsInCase, 2)
+        XCTAssertNil(CasePacketLayout.decode(payload, messageLength: 0x11, layouts: layouts))
+        XCTAssertNil(CasePacketLayout.decode(Data([0xa5, 2, 65, 2]), messageLength: 0x05, layouts: layouts))
+        XCTAssertNotNil(CasePacketLayout.decode(closed, messageLength: 0x11, layouts: layouts))
     }
 
     func testFirmwareVariantsAndCounterAreNotIdentityFields() {
@@ -104,7 +148,7 @@ final class CaseAdvertisementTests: XCTestCase {
         for length in 0..<good.count {
             XCTAssertNil(CaseAdvertisement.decode(manufacturerData: good.prefix(length), key: key))
         }
-        for index in [0, 1, 8, 11] {
+        for index in [8, 11] {
             var data = closed
             data[index] ^= 0x01
             XCTAssertNil(CaseAdvertisement.decodePlaintext(data))
@@ -123,13 +167,14 @@ final class CaseAdvertisementTests: XCTestCase {
         XCTAssertNil(AirPodsKey.parse(String(repeating: "g", count: 32)))
     }
 
-    func testInspectionDistinguishesUnsupportedHeaderFromWrongKey() throws {
-        var anotherModel = closed
-        anotherModel[0] = 0x14
-        let unknown = try packet(anotherModel)
-        XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: unknown, key: key), .unsupportedHeader(0x1420))
-        XCTAssertNil(CaseAdvertisement.decode(manufacturerData: unknown, key: key))
-        XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: try packet(closed), key: Data(repeating: 0xff, count: 16)), .layoutMismatch)
+    func testInspectionDistinguishesMissingKeyFromMalformedPayload() throws {
+        let encrypted = try packet(closed)
+        XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: encrypted), .invalidKey)
+        XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: encrypted, key: Data()), .invalidKey)
+        XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: encrypted, key: Data(repeating: 0xff, count: 16)), .layoutMismatch)
+        var malformed = closed
+        malformed[11] = 1
+        XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: try packet(malformed), key: key), .layoutMismatch)
         XCTAssertEqual(CaseAdvertisement.inspect(manufacturerData: Data(), key: key), .notCase)
     }
 

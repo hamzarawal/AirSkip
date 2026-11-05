@@ -2,14 +2,15 @@
 
 <img src="assets/app-icon.png" alt="AirSkip app icon" width="96">
 
-Use your AirPods Pro 3 case as a YouTube fast-forward remote on macOS. Open the
+Use your AirPods case as a YouTube fast-forward remote on macOS. Open the
 lid to repeat the right-arrow key; close it to stop. Set the repeat delay from
 0.15 to 2 seconds.
 
 AirSkip runs in the menu bar and works with **YouTube in Google Chrome**.
 It is experimental: lid detection uses an undocumented Bluetooth format.
-The current layout was observed on AirPods Pro 3 firmware 9A348; other models
-and firmware may not work.
+**Tested only on AirPods Pro 3 (firmware 9A348).** Other cases may work if they
+use the same packet layout, or may need code changes. Model headers are not
+restricted to Pro 3; compatibility with other cases has not been verified.
 
 ## Install from source
 
@@ -37,7 +38,7 @@ if you have multiple certificates or want a consistent signing identity.
 
 ## Set up
 
-1. Pair your AirPods Pro 3 with this Mac and open AirSkip.
+1. Pair your AirPods with this Mac and open AirSkip.
 2. Allow Bluetooth access. Open and close the case, check that the animation
    follows it, then click **The lid matches**. Check with the earbuds out too.
 3. Click **Open Accessibility Settings** and allow AirSkip under
