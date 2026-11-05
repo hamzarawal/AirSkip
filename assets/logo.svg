@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -3 106 86" fill="none">
+  <title>AirSkip pocket remote</title>
+  <g stroke="#1f1f1f" stroke-width="6">
+    <rect x="3" y="3" width="94" height="74" rx="25"/>
+    <path d="M3 30H97"/>
+  </g>
+  <g fill="#1f1f1f">
+    <path d="M27 38L49 50L27 62Z"/>
+    <rect x="58" y="38" width="7" height="24" rx="1.5"/>
+    <rect x="71" y="38" width="7" height="24" rx="1.5"/>
+  </g>
+</svg>

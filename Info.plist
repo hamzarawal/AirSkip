@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>CFBundleName</key><string>AirSkip</string>
+    <key>CFBundleDisplayName</key><string>AirSkip</string>
+    <key>CFBundleIdentifier</key><string>local.airskip.app</string>
+    <key>CFBundleExecutable</key><string>AirSkip</string>
+    <key>CFBundleIconFile</key><string>AirSkip</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>0.1.1</string>
+    <key>CFBundleVersion</key><string>3</string>
+    <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>LSUIElement</key><true/>
+    <key>NSBluetoothAlwaysUsageDescription</key><string>AirSkip listens for your AirPods case lid so opening it can fast-forward YouTube.</string>
+    <key>NSBluetoothPeripheralUsageDescription</key><string>AirSkip listens for your AirPods case lid so opening it can fast-forward YouTube.</string>
+    <key>NSHighResolutionCapable</key><true/>
+</dict></plist>
