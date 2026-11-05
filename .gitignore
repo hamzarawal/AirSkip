@@ -1,0 +1,46 @@
+# Swift and app builds
+.build/
+dist/
+.swiftpm/
+*.xcodeproj/
+*.xcuserstate
+xcuserdata/
+
+# Local tools and settings
+.DS_Store
+.codex/
+.agents/
+.aws/
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+
+# Credentials, signing material and local captures
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.mobileprovision
+*.keychain
+*.keychain-db
+*.log
+*.pcap
+*.pcapng
+*.trace
+local/
+private/
+secrets/
+
+# Asset authoring files are not needed to build or run AirSkip
+*.blend
+*.blend[0-9]*
+*.fbx
+*.obj
+
+# Local asset creation and diagnostic tools
+/tooling/
