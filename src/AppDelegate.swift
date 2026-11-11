@@ -114,7 +114,7 @@ final class AirSkipAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
     }
 
     private func controlPanelSize(on screen: NSScreen?) -> NSSize {
-        var preferredHeight: CGFloat = 365
+        var preferredHeight: CGFloat = 405
         if !model.verified { preferredHeight += 155 }
         if !model.accessibilityReady { preferredHeight += 60 }
         let visibleHeight = (screen ?? NSScreen.main)?.visibleFrame.height ?? preferredHeight + 40

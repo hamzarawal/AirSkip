@@ -62,6 +62,12 @@ struct ControlPanel: View {
                         repeatDelay
                     }
 
+                    Text(model.activity)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     if !model.verified {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Match your lid").fontWeight(.medium)
@@ -90,7 +96,7 @@ struct ControlPanel: View {
                             Image(systemName: "cursorarrow.click").foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Keyboard access").fontWeight(.medium)
-                                Button("Open Accessibility Settings") { ChromeKeySender.requestAccessibility() }
+                                Button("Open Accessibility Settings") { model.openAccessibilitySettings() }
                                     .help("Allow AirSkip in System Settings → Privacy & Security → Accessibility.")
                             }
                         }
@@ -209,8 +215,16 @@ struct ControlPanel: View {
 
                     troubleshootingCard("Keyboard access", icon: "cursorarrow.click") {
                         recoveryAction(model.accessibilityReady ? "Access allowed" : "Allow arrow keys", detail: "Turn on AirSkip in Accessibility so it can skip.", button: "Settings") {
-                            ChromeKeySender.requestAccessibility()
+                            model.openAccessibilitySettings()
                         }
+                        Text(model.keyboardStatus)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("Arrow key pairs posted: \(model.sentCount)")
+                            .foregroundStyle(.secondary)
+                        Text("Close these controls, bring YouTube in Chrome to the front, and click the video player. A posted key does not confirm the video received it.")
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     troubleshootingCard("If AirSkip can’t read the lid", icon: "key") {
