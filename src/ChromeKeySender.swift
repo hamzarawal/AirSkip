@@ -9,13 +9,27 @@ enum ChromeKeySender {
 
     static var hasAccessibility: Bool { AXIsProcessTrusted() }
 
-    static func requestAccessibility() {
-        guard !hasAccessibility else { return }
-        // Open one setup surface. The system's AX prompt is a separate alert
-        // that does not dismiss when the grant changes in Settings.
-        // AppModel silently observes the grant and removes our inline setup.
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
+    static func requestAccessibility(completion: @escaping (Bool) -> Void) {
+        // Always honor an explicit Settings action, even if permission changed
+        // since the UI last refreshed. Target Settings directly so a missing
+        // default URL handler cannot silently swallow the request.
+        let workspace = NSWorkspace.shared
+        guard let settings = workspace.urlForApplication(withBundleIdentifier: "com.apple.systempreferences") else {
+            completion(false)
+            return
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        workspace.open([url], withApplicationAt: settings, configuration: configuration) { app, error in
+            if app != nil && error == nil {
+                completion(true)
+                return
+            }
+            // Still launch Settings if macOS rejects the pane link.
+            workspace.openApplication(at: settings, configuration: configuration) { app, error in
+                completion(app != nil && error == nil)
+            }
         }
     }
 

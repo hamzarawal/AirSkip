@@ -74,6 +74,15 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
         self.init(defaults: .standard, deviceProvider: PairedDevice.list)
     }
 
+    func openAccessibilitySettings() {
+        ChromeKeySender.requestAccessibility { [weak self] opened in
+            guard !opened else { return }
+            DispatchQueue.main.async {
+                self?.message = "Couldn’t open System Settings. Open it from the Apple menu, then choose Privacy & Security → Accessibility and allow AirSkip."
+            }
+        }
+    }
+
     init(defaults: UserDefaults, deviceProvider: @escaping () -> [PairedDevice]) {
         self.defaults = defaults
         self.deviceProvider = deviceProvider

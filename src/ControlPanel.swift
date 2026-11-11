@@ -90,7 +90,7 @@ struct ControlPanel: View {
                             Image(systemName: "cursorarrow.click").foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Keyboard access").fontWeight(.medium)
-                                Button("Open Accessibility Settings") { ChromeKeySender.requestAccessibility() }
+                                Button("Open Accessibility Settings") { model.openAccessibilitySettings() }
                                     .help("Allow AirSkip in System Settings → Privacy & Security → Accessibility.")
                             }
                         }
@@ -209,7 +209,7 @@ struct ControlPanel: View {
 
                     troubleshootingCard("Keyboard access", icon: "cursorarrow.click") {
                         recoveryAction(model.accessibilityReady ? "Access allowed" : "Allow arrow keys", detail: "Turn on AirSkip in Accessibility so it can skip.", button: "Settings") {
-                            ChromeKeySender.requestAccessibility()
+                            model.openAccessibilitySettings()
                         }
                     }
 
