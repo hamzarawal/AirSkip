@@ -50,7 +50,9 @@ mkdir -p .build/cache .build/clang-cache dist
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache"
 swift build -c release --cache-path "$PWD/.build/cache"
 BIN_DIR="$(swift build -c release --cache-path "$PWD/.build/cache" --show-bin-path)"
-AIRSKIP_STAGE=$(mktemp -d "${TMPDIR:-/private/tmp}/airskip-build.XXXXXX")
+# Always sign and archive outside file-provider folders (including TMPDIR
+# overrides). Providers can restore prohibited FinderInfo on app directories.
+AIRSKIP_STAGE=$(mktemp -d /private/tmp/airskip-build.XXXXXX)
 AIRSKIP_DEST_STAGE=
 cleanup() {
   if [[ -n "$AIRSKIP_DEST_STAGE" && -d "$AIRSKIP_DEST_STAGE/previous.app" && ! -e "$APP" ]]; then
@@ -73,6 +75,13 @@ cp -R "$BIN_DIR/AirSkip_MenuBarApp.bundle" "$AIRSKIP_BUNDLE/Contents/Resources/"
 xattr -cr "$AIRSKIP_BUNDLE"
 bash scripts/sign-app.sh "$AIRSKIP_BUNDLE"
 
+# The ZIP is the distributable artifact: file providers cannot attach FinderInfo
+# to the app directories inside it. Verify the exact archive after extraction.
+ditto -c -k --keepParent --norsrc --noextattr "$AIRSKIP_BUNDLE" "$AIRSKIP_STAGE/AirSkip.zip"
+mkdir "$AIRSKIP_STAGE/archive-check"
+ditto -x -k --norsrc --noextattr "$AIRSKIP_STAGE/AirSkip.zip" "$AIRSKIP_STAGE/archive-check"
+codesign --verify --strict "$AIRSKIP_STAGE/archive-check/AirSkip.app"
+
 # Copy and verify on the destination volume before replacing an existing app.
 mkdir -p "$(dirname "$APP")"
 if [[ -e "$APP" || -L "$APP" ]]; then
@@ -84,9 +93,19 @@ if [[ -e "$APP" || -L "$APP" ]]; then
 fi
 AIRSKIP_DEST_STAGE=$(mktemp -d "$(dirname "$APP")/.airskip-install.XXXXXX")
 ditto --norsrc --noextattr "$AIRSKIP_BUNDLE" "$AIRSKIP_DEST_STAGE/AirSkip.app"
-# Finder or a synced destination can attach metadata during the copy.
-xattr -cr "$AIRSKIP_DEST_STAGE/AirSkip.app"
-codesign --verify --strict "$AIRSKIP_DEST_STAGE/AirSkip.app"
+bash scripts/verify-app.sh "$AIRSKIP_DEST_STAGE/AirSkip.app"
 if [[ -d "$APP" ]]; then mv "$APP" "$AIRSKIP_DEST_STAGE/previous.app"; fi
 mv "$AIRSKIP_DEST_STAGE/AirSkip.app" "$APP"
+# Verify the final signed contents using a clean copy: synced folders can
+# continually reattach FinderInfo. Keep the previous app until this passes.
+if ! bash scripts/verify-app.sh "$APP"; then
+  mv "$APP" "$AIRSKIP_DEST_STAGE/rejected.app"
+  exit 1
+fi
+if ! $INSTALL; then
+  cp "$AIRSKIP_STAGE/AirSkip.zip" "$AIRSKIP_DEST_STAGE/AirSkip.zip"
+  cmp "$AIRSKIP_STAGE/AirSkip.zip" "$AIRSKIP_DEST_STAGE/AirSkip.zip"
+  mv "$AIRSKIP_DEST_STAGE/AirSkip.zip" "$PWD/dist/AirSkip.zip"
+  printf 'Release archive: %s/dist/AirSkip.zip\n' "$PWD"
+fi
 printf 'Built: %s\n' "$APP"

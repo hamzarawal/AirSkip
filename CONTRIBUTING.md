@@ -3,13 +3,14 @@
 Use Swift 5.9 or later on macOS. Open `Package.swift` in Xcode or use the CLI:
 
 ```sh
-bash -n scripts/build.sh scripts/sign-app.sh
+bash -n scripts/build.sh scripts/sign-app.sh scripts/verify-app.sh
 swift test
 bash scripts/build.sh
 open dist/AirSkip.app
 ```
 
-The build produces an optimized app with bundled icons and all animation frames.
+The build produces an optimized app and a verified `dist/AirSkip.zip` release
+archive with bundled icons and all animation frames.
 Run the syntax checks, regression suite, and app build locally before pushing
 changes.
 

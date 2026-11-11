@@ -66,6 +66,19 @@ repeat case discovery rather than assuming the last lid state is current.
 Quit AirSkip before running the install command again. Keep the installed app
 at the same path after granting permissions.
 
+The release build signs and verifies the app in a temporary folder outside
+file-provider storage, then creates and verifies **dist/AirSkip.zip**. Use this
+ZIP when copying or sharing the release. Some synced folders automatically add
+Finder metadata to `.app` directories, causing `codesign` to report “resource
+fork, Finder information, or similar detritus not allowed” even after cleanup.
+The archive preserves the verified app without those attributes. Extract it
+outside the synced folder, such as into `~/Applications`.
+
+The build also keeps **dist/AirSkip.app** for local use. Destination copies are
+verified through a clean temporary copy to check their signed contents without
+racing the file provider. A failed final content check restores the previous
+app when one exists. Modified signed files still fail verification.
+
 With no Apple signing certificate, the build uses ad hoc signing for local use.
 After a changed build, macOS may require removing and re-adding AirSkip's entry
 in Accessibility Settings. AirSkip does not reset system permissions itself.
