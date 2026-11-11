@@ -148,6 +148,9 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
 
     func retryAutomaticSetup() {
         guard !loadingKey else { return }
+        // End the existing scan so Retry setup actually starts discovery again,
+        // even when CoreBluetooth still reports a stalled scan as active.
+        stopListening()
         manuallySelectedDevice = false
         savedKeyAttempts = []
         pairedKeyAttempts = []
