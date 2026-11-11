@@ -2,6 +2,8 @@ import AppKit
 import ApplicationServices
 
 enum ChromeKeySender {
+    private static var preparedApplication: NSRunningApplication?
+
     struct Target {
         let pid: pid_t?
         let reason: String
@@ -46,9 +48,19 @@ enum ChromeKeySender {
               title.localizedCaseInsensitiveContains("YouTube") else {
             return Target(pid: nil, reason: "Open a YouTube video in the active Chrome window")
         }
+        // Chrome can expose its native window while omitting the webpage's
+        // focused element until an accessibility client requests full support.
+        // Request once per Chrome launch: repeating this every tick restarts
+        // Chrome's activation debounce and can prevent activation entirely.
+        if preparedApplication != app {
+            if AXUIElementSetAttributeValue(application, "AXEnhancedUserInterface" as CFString,
+                                            kCFBooleanTrue) == .success {
+                preparedApplication = app
+            }
+        }
         guard let focus = element(application, attribute: kAXFocusedUIElementAttribute),
               let role = string(focus, attribute: kAXRoleAttribute) else {
-            return Target(pid: nil, reason: "Click the YouTube player to give it keyboard focus")
+            return Target(pid: nil, reason: "Waiting for Chrome focus · click the YouTube player")
         }
         if [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role) {
             return Target(pid: nil, reason: "Click the player; a text field is focused")

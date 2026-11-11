@@ -34,6 +34,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
     @Published var activity = "Open and close your case once"
     @Published var message: String?
     @Published var sentCount = 0
+    @Published private(set) var keyboardStatus = "Enable AirSkip to check Chrome keyboard focus"
     @Published private(set) var listeningRequested = false
     @Published private(set) var scanDiagnostics = ""
     @Published private(set) var nearbyCases: [NearbyCase] = []
@@ -555,6 +556,7 @@ final class AppModel: NSObject, ObservableObject, CBCentralManagerDelegate {
                 : "No compatible case broadcast received yet. Keep the case nearby and open/close it. This Mac or firmware may not expose the required broadcast."
         }
         let target = enabled ? ChromeKeySender.target() : ChromeKeySender.Target(pid: nil, reason: "Disabled")
+        if keyboardStatus != target.reason { keyboardStatus = target.reason }
         let ready = target.pid != nil && !asleep && !sessionLocked
         if controller.shouldPress(at: now, enabled: enabled, targetReady: ready), let pid = target.pid {
             if ChromeKeySender.pressRightArrow(pid: pid) { sentCount += 1 }

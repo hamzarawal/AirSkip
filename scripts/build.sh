@@ -84,6 +84,8 @@ if [[ -e "$APP" || -L "$APP" ]]; then
 fi
 AIRSKIP_DEST_STAGE=$(mktemp -d "$(dirname "$APP")/.airskip-install.XXXXXX")
 ditto --norsrc --noextattr "$AIRSKIP_BUNDLE" "$AIRSKIP_DEST_STAGE/AirSkip.app"
+# Finder or a synced destination can attach metadata during the copy.
+xattr -cr "$AIRSKIP_DEST_STAGE/AirSkip.app"
 codesign --verify --strict "$AIRSKIP_DEST_STAGE/AirSkip.app"
 if [[ -d "$APP" ]]; then mv "$APP" "$AIRSKIP_DEST_STAGE/previous.app"; fi
 mv "$AIRSKIP_DEST_STAGE/AirSkip.app" "$APP"

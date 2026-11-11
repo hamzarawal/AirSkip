@@ -52,6 +52,12 @@ Enable AirSkip, bring YouTube in Google Chrome to the front, click the player,
 and close AirSkip's controls. A focused search box or other text field blocks
 key presses. Other focused controls may handle the right arrow differently.
 
+The status below the repeat delay explains what is blocking skipping. In
+**Troubleshoot → Keyboard access**, check Chrome focus and the number of arrow
+key pairs posted. This count confirms posting, not that YouTube handled the key.
+AirSkip requests Chrome's webpage accessibility support automatically; the
+first focus check can take a few seconds while Chrome prepares it.
+
 After sleep or locking, enable AirSkip again. If the signal has stopped,
 repeat case discovery rather than assuming the last lid state is current.
 
